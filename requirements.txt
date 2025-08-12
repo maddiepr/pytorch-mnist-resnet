@@ -1,0 +1,17 @@
+# Core deep learning
+torch
+torchvision
+torchaudio
+
+# Utilities
+numpy
+pandas
+tqdm
+pyyaml
+scikit-learn
+
+# Plotting & visualization
+matplotlib
+
+# For Jupyter notebooks
+notebook
