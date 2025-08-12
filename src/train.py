@@ -1,7 +1,7 @@
 """
 train.py
 
-Maining training entry point for the PyTorch MNIST & ResNet Transfer Learning project.
+Main training entry point for the PyTorch MNIST & ResNet Transfer Learning project.
 
 This script handles:
     - Parsing experiment configurations (e.g., YAML files in 'experiments/').

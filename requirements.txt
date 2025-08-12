@@ -15,3 +15,5 @@ matplotlib
 
 # For Jupyter notebooks
 notebook
+
+# Testing pytest

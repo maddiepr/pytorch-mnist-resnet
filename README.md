@@ -17,14 +17,17 @@ This project serves as a clean, well-documented example of both training a CNN f
 ```
 pytorch-mnist-resnet/
 ├─ src/
-│ ├─ data.py # Data loading & preprocessing
-│ ├─ models.py # CNN architecture & ResNet adaptation
-│ ├─ train.py # Training loop & checkpoint saving
-│ ├─ evaluate.py # Model evaluation & plots
-│ └─ transfer_learning.py # Fine-tuning ResNet
-├─ notebooks/ # Jupyter walkthroughs
-├─ experiments/ # Config files (YAML)
-├─ outputs/ # Saved models & plots (gitignored)
+│ ├─ __init__.py            # Makes src a Python package
+│ ├─ data.py                # Data loading & preprocessing
+│ ├─ models.py              # CNN architecture & ResNet adaptation
+│ ├─ train.py               # Training loop & checkpoint saving
+│ ├─ evaluate.py            # Model evaluation & plots
+│ └─ transfer_learning.py   # Fine-tuning ResNet
+├─ notebooks/               # Jupyter walkthroughs
+├─ experiments/             # Config files (YAML)
+├─ outputs/                 # Saved models & plots (gitignored)
+├─ tests/
+│ ├─ test_data.py           # Tests for data.py
 ├─ requirements.txt
 ├─ LICENSE 
 ├─ .gitignore
@@ -74,5 +77,22 @@ TBD
 - Versioned code
 - Capture environment in requirements.txt
 
-# License
+## Testing
+This project includes unit tests for data preprocessing and reproducibility utilities, plus an optional integration test for the MNIST DataLoader.
+
+Run fast, offline tests
+```bash
+pytest -q
+```
+
+Run all tests (including MNIST download)
+```bash
+RUN_DATA_TEST=1 pytest -q
+```
+
+Notes:
+- Unit tests validate transform pipelines, normalization math, and reproducible random seeds.
+- The integration test downloads MNIST (if not already present in 'data/') and verifies DataLoader shapes and types.
+
+## License
 MIT License
