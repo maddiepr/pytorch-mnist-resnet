@@ -56,7 +56,7 @@ def set_seed(seed: int) -> None:
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
 
-def get_mnist_transforms(augment: bool = False) -> tuple[transforms.Compose, transforms.Compose]:
+def get_mnist_transforms(augment: bool = False, rotation_degrees: int = 10) -> tuple[transforms.Compose, transforms.Compose]:
     """
     Preprocessing piplines for MNIST images.
 
@@ -64,6 +64,8 @@ def get_mnist_transforms(augment: bool = False) -> tuple[transforms.Compose, tra
         augment: bool, optional
             If True, applies light data augmentation (random rotation) to the training
             set to improve generalizaton. Defaults to False.
+        rotation_degrees: int, optional
+            Maximum degrees for random rotation when augment=True. Defaults to 10.
     
     Returns:
         tuple[transforms.Compose, transforms.Compose]
@@ -85,7 +87,7 @@ def get_mnist_transforms(augment: bool = False) -> tuple[transforms.Compose, tra
         # Insert light augmentation at the start of the pipeline:
         # Randomly rotate images by +-10 degrees to simulate real handwriting variation
         # and make the model more robust to slight orientation changes.
-        train_list.insert(0, transforms.RandomRotation(10))
+        train_list.insert(0, transforms.RandomRotation(rotation_degrees))
 
     # Test transform pipeline: no augmentation, only convert to tensor and normalize.
     # This ensures evaluation is consistent and unbiased.
@@ -156,3 +158,99 @@ def get_mnist_dataloaders(
     )
 
     return train_loader, test_loader
+
+def get_custom_dataloaders(
+        data_dir: str,
+        image_size: int = 224,
+        batch_size: int = 32,
+        augment: bool = True,
+        as_grayscale: bool = False,
+        num_workers: int = 4,
+        seed: int = 42
+) -> tuple[DataLoader, DataLoader]:
+    """
+    Create PyTorch DataLoader objects for a custom image dataset.
+
+    This is intended for transfer learning with pretrained models such as ResNet,
+    which expect ImageNet-style normalization.
+
+    Parameters:
+        data_dir: str
+            Path to the dataset directory. Should contain 'train/' and 'test/' subfolders,
+            each with one subfolder per class label.
+        image_size: int, optional 
+            Target size (height, width) for resizing images. Defaults to 224 for ResNet.
+        batch_size: int, optional
+            Number of samples per batch. Defaults to 32.
+        augment: bool, optional
+            If True, applies basic augmentation (random horizontal flip) to training images.
+            Defaults to True.
+        as_grayscale: bool, optional
+            If True, converts images to grayscale before resizing and normalization.
+        num_workers: int, optional
+            Number of subprocesses to use for data loading. Defaults to 4.
+        seed: int, optional
+            Random seed for reproducible shuffling. Defaults to 42.
+
+    Returns:
+        tuple[DataLoader, DataLoader]
+            (train_loader, test_loader) ready for model training and evaluation.
+    """
+    set_seed(seed)
+
+    # ImageNet mean and std (for pretrained ResNet normalization)
+    mean = (0.485, 0.456, 0.406)
+    std = (0.229, 0.224, 0.225)
+
+    train_transforms = []
+    if as_grayscale:
+        train_transforms.append(transforms.Grayscale(num_output_channels=3))    # keeps 3 channels for ResNet
+    
+    if augment:
+        # Insert horizontal flip at start for data augmentation
+        train_transforms.append(transforms.RandomHorizontalFlip())
+
+    # Training transforms
+    train_transforms.extend([
+        transforms.Resize((image_size, image_size)),
+        transforms.ToTensor(),
+        transforms.Normalize(mean, std),
+    ])
+
+    test_transforms = []
+    if as_grayscale:
+        test_transforms.append(transforms.Grayscale(num_output_channels=3))
+    
+    # Testing transforms (no augmentation)
+    test_transforms.extend([
+        transforms.Resize((image_size, image_size)),
+        transforms.ToTensor(),
+        transforms.Normalize(mean, std),
+    ])
+
+    train_dataset = datasets.ImageFolder(
+        root=f"{data_dir}/train",
+        transform=transforms.Compose(train_transforms)
+    )
+    test_dataset = datasets.ImageFolder(
+        root=f"{data_dir}/test",
+        transform=transforms.Compose(test_transforms)
+    )
+
+    train_loader = DataLoader(
+        train_dataset,
+        batch_size=batch_size,
+        shuffle=True,
+        num_workers=num_workers,
+        pin_memory=True
+    )
+    test_loader = DataLoader(
+        test_dataset,
+        batch_size=batch_size,
+        shuffle=False,
+        num_workers=num_workers,
+        pin_memory=True
+    )
+
+    return train_loader, test_loader
+
